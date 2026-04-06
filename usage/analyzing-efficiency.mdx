@@ -1,0 +1,95 @@
+---
+title: "Analyzing image efficiency"
+description: "Understand the efficiency score, wasted bytes metrics, and how to reduce image size."
+---
+
+dive calculates an efficiency score and wasted-space metrics every time you analyze an image. These numbers appear in the bottom-left pane of the TUI and in the JSON export.
+
+## The efficiency score
+
+The efficiency score is a ratio between `0` and `1` that represents how efficiently your image uses the space it occupies. A score of `1.0` means every byte stored in the image is unique across all layers — nothing is duplicated or wasted. A lower score indicates that some bytes are being stored redundantly.
+
+The score is calculated as:
+
+```
+efficiency = minimum_unique_bytes / total_discovered_bytes
+```
+
+For each file path seen across all layers, dive records the smallest version of that file (minimum size) and the total cumulative size across every occurrence. Paths that appear only once do not affect the score. Paths that appear multiple times reduce it, weighted by how large they are.
+
+## Metrics at a glance
+
+| Metric | Description |
+|--------|-------------|
+| **Efficiency** | Score from `0` to `1`; higher is better |
+| **Image size** | Total compressed size of all layers combined |
+| **Wasted bytes** | Bytes consumed by files that are duplicated or removed across layers |
+| **Wasted (user%)** | Wasted bytes as a fraction of the user image size |
+| **Inefficiencies** | Ranked list of file paths that contribute the most wasted space, with cumulative sizes |
+
+<Note>
+The base image layer (layer index `0`) is excluded from user-size calculations. The `highestUserWastedPercent` CI rule and the wasted-user-percent metric both measure waste relative to everything _above_ the base image.
+</Note>
+
+## What causes wasted space
+
+Three patterns inflate your wasted-bytes count:
+
+1. **Files duplicated across layers** — A file written in layer 2 and then written again (with the same or different content) in layer 4 means both copies are stored in the image.
+2. **Files overwritten or moved** — Copying a file to a new path and deleting the original still keeps the original bytes in the earlier layer.
+3. **Files added then deleted later** — Adding a package cache in one `RUN` step and removing it in a later step stores the cache in the earlier layer permanently.
+
+## Interpreting results
+
+| Score range | Interpretation |
+|-------------|---------------|
+| `0.95` – `1.0` | Efficient — minimal or no wasted space |
+| `0.85` – `0.95` | Acceptable — some room for improvement |
+| Below `0.85` | Needs attention — significant wasted space worth investigating |
+
+These thresholds are a guideline. The default CI threshold for `lowestEfficiency` is `0.95`. Review the inefficiencies list to identify which specific files are driving the waste.
+
+## Practical tips for reducing wasted space
+
+**Combine `RUN` commands**
+
+Each `RUN` instruction creates a new layer. Splitting installation and cleanup into separate `RUN` steps means the cleanup layer marks files as deleted, but those files still exist in the installation layer.
+
+```dockerfile
+# Inefficient — cache is stored in the first layer
+RUN apt-get update && apt-get install -y curl
+RUN rm -rf /var/lib/apt/lists/*
+
+# Efficient — update, install, and clean up in one layer
+RUN apt-get update && apt-get install -y curl \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+**Clean up in the same `RUN` step**
+
+Package managers leave behind caches, lock files, and temporary downloads. Remove them in the same command that installs packages so they never make it into a layer.
+
+```dockerfile
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+**Use multi-stage builds**
+
+Multi-stage builds let you compile or build in one stage and copy only the final artifact into the production image. Build tools, source code, and intermediate files stay out of the final image entirely.
+
+```dockerfile
+FROM golang:1.22 AS builder
+WORKDIR /app
+COPY . .
+RUN go build -o myapp .
+
+FROM debian:bookworm-slim
+COPY --from=builder /app/myapp /usr/local/bin/myapp
+ENTRYPOINT ["myapp"]
+```
+
+**Be careful with `COPY` commands**
+
+`COPY`ing a directory that already exists in the image overwrites individual files but leaves the previous versions of those files in the earlier layer. Use `.dockerignore` to exclude unnecessary files before they ever enter the build context.

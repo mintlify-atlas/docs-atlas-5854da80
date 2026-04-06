@@ -1,0 +1,122 @@
+---
+title: "CI integration"
+description: "Run dive in CI pipelines to enforce image efficiency rules with pass/fail output."
+---
+
+dive includes a CI mode that skips the interactive TUI and instead analyzes your image against a set of configurable rules, exiting with a non-zero code if any rule fails. Use this to gate deployments on image quality.
+
+## Basic usage
+
+Set the `CI` environment variable to `true` when running any valid dive command:
+
+```bash
+CI=true dive <your-image>
+```
+
+You can also pass the `--ci` flag directly:
+
+```bash
+dive --ci <your-image>
+```
+
+dive will print a summary of the analysis and exit with code `0` if all rules pass, or a non-zero code if any rule fails.
+
+## CI rules
+
+Pass/fail is determined by three configurable rules. Create a `.dive-ci` file at the root of your repository to set thresholds:
+
+```yaml
+rules:
+  # If the efficiency is measured below X%, mark as failed.
+  # Expressed as a ratio between 0-1.
+  lowestEfficiency: 0.95
+
+  # If the amount of wasted space is at least X or larger than X, mark as failed.
+  # Expressed in B, KB, MB, and GB.
+  highestWastedBytes: 20MB
+
+  # If the amount of wasted space makes up for X% or more of the image, mark as failed.
+  # Note: the base image layer is NOT included in the total image size.
+  # Expressed as a ratio between 0-1; fails if the threshold is met or crossed.
+  highestUserWastedPercent: 0.20
+```
+
+<Note>
+  The `.dive-ci` file uses camelCase keys (`lowestEfficiency`, `highestWastedBytes`, `highestUserWastedPercent`). These are different from the snake-case keys used in the main dive config file.
+</Note>
+
+### Rule reference
+
+<ParamField path="rules.lowestEfficiency" type="number" default="0.9">
+  The lowest allowable image efficiency score. Expressed as a ratio between `0` and `1`. dive fails if the measured efficiency falls below this threshold.
+</ParamField>
+
+<ParamField path="rules.highestWastedBytes" type="string" default="disabled">
+  The maximum allowable wasted bytes. Expressed as a value with a unit suffix: `B`, `KB`, `MB`, or `GB`. dive fails if wasted space meets or exceeds this threshold. Set to `disabled` to skip this rule.
+</ParamField>
+
+<ParamField path="rules.highestUserWastedPercent" type="number" default="0.1">
+  The maximum allowable percentage of the image that is wasted space. Expressed as a ratio between `0` and `1`. The base image layer is excluded from the total image size. dive fails if the wasted percentage meets or exceeds this threshold.
+</ParamField>
+
+<Note>
+  Set any rule value to `disabled` to skip that rule entirely.
+</Note>
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All rules passed |
+| non-zero | One or more rules failed |
+
+## Config file path
+
+By default, dive looks for `.dive-ci` at the current working directory. Override this with the `--ci-config` flag:
+
+```bash
+CI=true dive --ci-config /path/to/my-ci-rules.yaml <your-image>
+```
+
+## CLI flag overrides
+
+You can set rule thresholds directly on the command line without a config file. These flags are only evaluated when CI mode is active.
+
+```bash
+CI=true dive \
+  --lowestEfficiency 0.95 \
+  --highestWastedBytes 20MB \
+  --highestUserWastedPercent 0.20 \
+  <your-image>
+```
+
+## GitHub Actions example
+
+<Steps>
+  <Step title="Build your image">
+    Build the image in an earlier step and tag it for reference.
+
+    ```yaml
+    - name: Build Docker image
+      run: docker build -t ${{ env.IMAGE_TAG }} .
+    ```
+  </Step>
+  <Step title="Analyze with dive">
+    Run dive in CI mode against the built image.
+
+    ```yaml
+    - name: Analyze Docker image
+      run: CI=true dive ${{ env.IMAGE_TAG }}
+      env:
+        CI: "true"
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  You can combine the build and analysis steps into a single command using `dive build`. This builds the image and immediately analyzes it:
+
+  ```bash
+  CI=true dive build -t <your-image-tag> .
+  ```
+</Tip>

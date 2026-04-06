@@ -1,0 +1,111 @@
+---
+title: "Keybindings"
+description: "Keyboard shortcuts for navigating dive, and how to customize them."
+---
+
+## Default keybindings
+
+### Global
+
+These bindings work from any view.
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+C` or `Q` | Exit |
+| `Tab` | Switch between the layer and filetree views |
+| `Ctrl+F` | Filter files |
+| `ESC` | Close file filter |
+| `PageUp` or `U` | Scroll up a page |
+| `PageDown` or `D` | Scroll down a page |
+| `Up` or `K` | Move up one line |
+| `Down` or `J` | Move down one line |
+
+### Layer view
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+A` | Show aggregated image modifications (all layers up to selected) |
+| `Ctrl+L` | Show current layer modifications only |
+
+### Filetree view
+
+| Key | Action |
+|-----|--------|
+| `Space` | Collapse or uncollapse a directory |
+| `Ctrl+Space` | Collapse or uncollapse all directories |
+| `Ctrl+A` | Show or hide added files |
+| `Ctrl+R` | Show or hide removed files |
+| `Ctrl+M` | Show or hide modified files |
+| `Ctrl+U` | Show or hide unmodified files |
+| `Ctrl+B` | Show or hide file attributes |
+| `Ctrl+O` | Toggle sort order |
+| `Ctrl+P` | Toggle word wrap on long paths |
+| `Ctrl+E` | Extract the selected file |
+| `PageUp` or `U` | Scroll up a page |
+| `PageDown` or `D` | Scroll down a page |
+
+## Customizing keybindings
+
+Add a `keybinding` section to your [config file](/configuration/config-file) to override any default binding.
+
+```yaml
+keybinding:
+  # Global bindings
+  quit: ctrl+c
+  toggle-view: tab
+  filter-files: ctrl+f, ctrl+slash
+  close-filter-files: esc
+  up: up,k
+  down: down,j
+  left: left,h
+  right: right,l
+
+  # Layer view bindings
+  compare-all: ctrl+a
+  compare-layer: ctrl+l
+
+  # Filetree view bindings
+  toggle-collapse-dir: space
+  toggle-collapse-all-dir: ctrl+space
+  toggle-added-files: ctrl+a
+  toggle-removed-files: ctrl+r
+  toggle-modified-files: ctrl+m
+  toggle-unmodified-files: ctrl+u
+  toggle-filetree-attributes: ctrl+b
+  toggle-sort-order: ctrl+o
+  toggle-wrap-tree: ctrl+p
+  extract-file: ctrl+e
+  page-up: pgup,u
+  page-down: pgdn,d
+```
+
+<Note>
+  You can assign multiple keys to the same action by separating them with a comma — for example, `up: up,k`. The first binding in the list is used for UI hints shown at the bottom of the screen.
+</Note>
+
+## Binding names reference
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `quit` | `ctrl+c` | Exit dive |
+| `toggle-view` | `tab` | Switch between layer and filetree views |
+| `filter-files` | `ctrl+f, ctrl+slash` | Open file filter |
+| `close-filter-files` | `esc` | Close file filter |
+| `up` | `up,k` | Move cursor up |
+| `down` | `down,j` | Move cursor down |
+| `left` | `left,h` | Move cursor left |
+| `right` | `right,l` | Move cursor right |
+| `page-up` | `pgup,u` | Scroll up a page |
+| `page-down` | `pgdn,d` | Scroll down a page |
+| `compare-all` | `ctrl+a` | Show aggregated layer changes |
+| `compare-layer` | `ctrl+l` | Show current layer changes |
+| `toggle-collapse-dir` | `space` | Collapse or expand a directory |
+| `toggle-collapse-all-dir` | `ctrl+space` | Collapse or expand all directories |
+| `toggle-added-files` | `ctrl+a` | Show or hide added files |
+| `toggle-removed-files` | `ctrl+r` | Show or hide removed files |
+| `toggle-modified-files` | `ctrl+m` | Show or hide modified files |
+| `toggle-unmodified-files` | `ctrl+u` | Show or hide unmodified files |
+| `toggle-filetree-attributes` | `ctrl+b` | Show or hide file attributes |
+| `toggle-sort-order` | `ctrl+o` | Toggle the sort order of files in the tree |
+| `toggle-wrap-tree` | `ctrl+p` | Toggle word wrap on long file paths |
+| `extract-file` | `ctrl+e` | Extract the selected file's contents |

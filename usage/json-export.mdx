@@ -1,0 +1,148 @@
+---
+title: "JSON export"
+description: "Write layer analysis results to a JSON file for CI scripting and custom tooling."
+---
+
+The `--json` flag (short: `-j`) skips the interactive TUI and writes the full analysis to a JSON file. This is useful for CI pipelines, custom reporting tools, or any workflow where you want to process dive's output programmatically.
+
+## Basic usage
+
+```bash
+dive --json output.json nginx:latest
+```
+
+dive analyzes the image, writes the results to `output.json`, and exits. No TUI is opened.
+
+<Note>
+The directory containing the output file must already exist. dive will return an error if the parent directory does not exist.
+</Note>
+
+## Use in CI
+
+Combine `--json` with `CI=true` to get both a machine-readable file and a pass/fail exit code in one run:
+
+```bash
+CI=true dive --json analysis.json nginx:latest
+```
+
+You can then parse `analysis.json` in subsequent steps — for example, to post the efficiency score to a dashboard or fail the build based on custom thresholds beyond what the built-in CI rules support.
+
+## JSON structure
+
+The output file contains a single JSON object with two top-level keys: `layer` and `image`.
+
+### Top-level object
+
+<ResponseField name="layer" type="array">
+  An ordered array of layer objects, one per image layer.
+</ResponseField>
+
+<ResponseField name="image" type="object">
+  Aggregate efficiency and size metrics for the full image.
+</ResponseField>
+
+### Layer object
+
+Each element in the `layer` array describes one image layer.
+
+<ResponseField name="index" type="integer">
+  Zero-based position of the layer in the image stack. Layer `0` is the base layer.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Short layer ID.
+</ResponseField>
+
+<ResponseField name="digestId" type="string">
+  Full digest identifier for the layer.
+</ResponseField>
+
+<ResponseField name="sizeBytes" type="integer">
+  Uncompressed size of this layer in bytes.
+</ResponseField>
+
+<ResponseField name="command" type="string">
+  The Dockerfile instruction that produced this layer (e.g., `RUN apt-get install -y curl`).
+</ResponseField>
+
+<ResponseField name="fileList" type="array">
+  Array of file info objects listing every file touched by this layer.
+</ResponseField>
+
+### Image object
+
+<ResponseField name="sizeBytes" type="integer">
+  Total uncompressed size of the image across all layers, in bytes.
+</ResponseField>
+
+<ResponseField name="inefficientBytes" type="integer">
+  Total bytes wasted by files that are duplicated, overwritten, or deleted across layers.
+</ResponseField>
+
+<ResponseField name="efficiencyScore" type="float">
+  Efficiency ratio between `0` and `1`. A score of `1.0` means no wasted space. See [Analyzing image efficiency](/usage/analyzing-efficiency) for details.
+</ResponseField>
+
+<ResponseField name="fileReference" type="array">
+  List of inefficient files sorted by wasted bytes (descending). Each entry has:
+
+  <Expandable title="fileReference fields">
+    <ResponseField name="count" type="integer">
+      Number of times this file path appears across all layers.
+    </ResponseField>
+
+    <ResponseField name="sizeBytes" type="integer">
+      Cumulative bytes consumed by all occurrences of this file path.
+    </ResponseField>
+
+    <ResponseField name="file" type="string">
+      Absolute path of the file inside the image.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example output
+
+```json
+{
+  "layer": [
+    {
+      "index": 0,
+      "id": "a3ed95caeb02",
+      "digestId": "sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4",
+      "sizeBytes": 0,
+      "command": "#(nop) ADD file:... in /",
+      "fileList": []
+    },
+    {
+      "index": 1,
+      "id": "b4d181a07f80",
+      "digestId": "sha256:b4d181a07f800bab09a8b95ad1aea5b5e8a82cb47e7524af18d58fe6b9c1c9ce",
+      "sizeBytes": 27145728,
+      "command": "RUN apt-get update && apt-get install -y curl",
+      "fileList": [
+        {
+          "path": "/usr/bin/curl",
+          "size": 194560,
+          "uid": 0,
+          "gid": 0,
+          "isDir": false,
+          "linkName": ""
+        }
+      ]
+    }
+  ],
+  "image": {
+    "sizeBytes": 109051904,
+    "inefficientBytes": 8388608,
+    "efficiencyScore": 0.9231,
+    "fileReference": [
+      {
+        "count": 2,
+        "sizeBytes": 8388608,
+        "file": "/var/cache/apt/pkgcache.bin"
+      }
+    ]
+  }
+}
+```

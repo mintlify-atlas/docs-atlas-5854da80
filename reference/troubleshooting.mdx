@@ -1,0 +1,212 @@
+---
+title: "Troubleshooting"
+description: "Solutions to common problems when running dive."
+---
+
+<Note>
+  If you run into a problem that isn't covered here, search for existing reports or file a new issue at [github.com/wagoodman/dive/issues](https://github.com/wagoodman/dive/issues).
+</Note>
+
+<AccordionGroup>
+
+  <Accordion title="Cannot connect to Docker daemon">
+    Dive needs the Docker daemon to be running before it can pull or analyze images.
+
+    **Check that the daemon is running:**
+
+    ```bash
+    docker ps
+    ```
+
+    If this fails, start Docker and try again.
+
+    **Check socket permissions:**
+
+    You may need to run dive with `sudo`, or add your user to the `docker` group:
+
+    ```bash
+    sudo usermod -aG docker $USER
+    newgrp docker
+    ```
+
+    **Docker Desktop on macOS:**
+
+    Open Docker Desktop and wait until the status shows "Running" before invoking dive.
+
+    **Alternative runtimes (Colima, Rancher Desktop, etc.):**
+
+    Set `DOCKER_HOST` to point at the correct socket:
+
+    ```bash
+    export DOCKER_HOST=$(docker context inspect -f '{{ .Endpoints.docker.Host }}')
+    dive my-image:latest
+    ```
+  </Accordion>
+
+  <Accordion title="Image not found / invalid reference format">
+    Dive couldn't locate the image you specified.
+
+    **Verify the image exists locally:**
+
+    ```bash
+    docker image ls
+    ```
+
+    **Pull the image first:**
+
+    ```bash
+    docker pull nginx:latest
+    dive nginx:latest
+    ```
+
+    **Check the image tag spelling:**
+
+    Image references are case-sensitive. Confirm the tag name matches exactly what is returned by `docker image ls`.
+  </Accordion>
+
+  <Accordion title="Permission denied when using the Docker socket">
+    When you run dive via a Docker container, you must mount the host Docker socket into the container. Without it, the containerized dive process cannot reach the Docker daemon.
+
+    ```bash
+    docker run --rm -it \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        docker.io/wagoodman/dive:latest my-image:latest
+    ```
+
+    The `-v /var/run/docker.sock:/var/run/docker.sock` flag gives the container access to the host Docker daemon. Without it, you will see permission errors.
+  </Accordion>
+
+  <Accordion title="API version mismatch errors">
+    If your local Docker client and daemon have different API versions, you may see errors like `client version X.X is too new`.
+
+    **Set the API version explicitly:**
+
+    ```bash
+    DOCKER_API_VERSION=1.37 dive my-image:latest
+    ```
+
+    **When running via Docker image:**
+
+    ```bash
+    docker run --rm -it \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -e DOCKER_API_VERSION=1.37 \
+        docker.io/wagoodman/dive:latest my-image:latest
+    ```
+
+    Adjust `1.37` to match the API version your daemon supports. You can check this with `docker version`.
+  </Accordion>
+
+  <Accordion title="Snap installation conflicts with Docker">
+    If you installed Docker via `apt-get` and dive via Snap, the Snap-managed Docker may conflict with your existing Docker daemon and break it.
+
+    <Warning>
+      Do not install dive via Snap if you installed Docker using `apt-get`. Use the deb package or Homebrew instead.
+    </Warning>
+
+    **Install via deb package instead:**
+
+    ```bash
+    DIVE_VERSION=$(curl -sL "https://api.github.com/repos/wagoodman/dive/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    curl -fOL "https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.deb"
+    sudo apt install ./dive_${DIVE_VERSION}_linux_amd64.deb
+    ```
+
+    For more context, see [GitHub issue #546](https://github.com/wagoodman/dive/issues/546).
+  </Accordion>
+
+  <Accordion title="Podman is not working">
+    Podman support in dive is **Linux only**. Podman is not supported on macOS or Windows.
+
+    **Check that the Podman socket is running:**
+
+    ```bash
+    systemctl --user start podman.socket
+    ```
+
+    **Tell dive to use Podman:**
+
+    ```bash
+    dive my-image:latest --source podman
+    # or using the URL scheme:
+    dive podman://my-image:latest
+    ```
+
+    If dive still cannot connect, verify the socket path and that Podman is installed correctly on your system.
+  </Accordion>
+
+  <Accordion title='"exactly one argument is required" error'>
+    Dive requires exactly one positional argument: the image reference. If you omit it or pass extra arguments, dive exits with this error.
+
+    **Correct usage:**
+
+    ```bash
+    dive my-image:latest
+    ```
+
+    If you are passing flags, make sure they come after the image name or use `--` to separate them:
+
+    ```bash
+    dive my-image:latest --source docker
+    ```
+  </Accordion>
+
+  <Accordion title="CI mode always passes / rules are ignored">
+    If dive exits with code `0` in CI even though you expect failures, check the following:
+
+    **Ensure `CI=true` is set:**
+
+    ```bash
+    CI=true dive my-image:latest
+    ```
+
+    Or pass the `--ci` flag explicitly:
+
+    ```bash
+    dive my-image:latest --ci
+    ```
+
+    **Check your `.dive-ci` file location:**
+
+    By default, dive looks for `.dive-ci` at the current working directory. If your file is elsewhere, specify the path:
+
+    ```bash
+    CI=true dive my-image:latest --ci-config ./config/.dive-ci
+    ```
+
+    **Verify your rule values are valid:**
+
+    - Efficiency and percent ratios must be between `0` and `1`.
+    - Byte values must include a unit: `20MB`, `512KB`, `1GB`.
+    - Invalid values may be silently ignored or cause the rule to be disabled.
+
+    See [CI rules reference](/reference/ci-rules) for valid formats.
+  </Accordion>
+
+  <Accordion title="TUI display issues or garbled output">
+    If the interactive TUI looks broken, shows garbled characters, or doesn't render correctly:
+
+    **Try a different terminal emulator.** Some minimal or older terminals do not support the control sequences dive uses.
+
+    **Check your `TERM` variable:**
+
+    ```bash
+    echo $TERM
+    ```
+
+    For best results, use a terminal that reports `xterm-256color` or similar.
+
+    **Ensure 256-color support:**
+
+    ```bash
+    TERM=xterm-256color dive my-image:latest
+    ```
+
+    If you only need the analysis output without the TUI, use `--json` to export results to a file:
+
+    ```bash
+    dive my-image:latest --json ./analysis.json
+    ```
+  </Accordion>
+
+</AccordionGroup>

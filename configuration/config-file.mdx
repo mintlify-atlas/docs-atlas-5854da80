@@ -1,0 +1,144 @@
+---
+title: "Configuration file"
+description: "Customize dive behavior with a YAML configuration file."
+---
+
+No configuration is required to run dive, but you can create a config file to override the default settings for any session.
+
+## Config file locations
+
+dive searches for a config file in the following locations, in order:
+
+- `$XDG_CONFIG_HOME/dive/*.yaml`
+- `$XDG_CONFIG_DIRS/dive/*.yaml`
+- `~/.config/dive/*.yaml`
+- `~/.dive.yaml`
+
+You can use `.yml` instead of `.yaml` if you prefer.
+
+## Full configuration example
+
+```yaml
+# supported options are "docker" and "podman"
+container-engine: docker
+
+# continue with analysis even if there are errors parsing the image archive
+ignore-errors: false
+
+log:
+  enabled: true
+  path: ./dive.log
+  level: info
+
+# Note: you can specify multiple bindings by separating values with a comma.
+# Note: UI hinting is derived from the first binding
+keybinding:
+  # Global bindings
+  quit: ctrl+c
+  toggle-view: tab
+  filter-files: ctrl+f, ctrl+slash
+  close-filter-files: esc
+  up: up,k
+  down: down,j
+  left: left,h
+  right: right,l
+
+  # Layer view specific bindings
+  compare-all: ctrl+a
+  compare-layer: ctrl+l
+
+  # File view specific bindings
+  toggle-collapse-dir: space
+  toggle-collapse-all-dir: ctrl+space
+  toggle-added-files: ctrl+a
+  toggle-removed-files: ctrl+r
+  toggle-modified-files: ctrl+m
+  toggle-unmodified-files: ctrl+u
+  toggle-filetree-attributes: ctrl+b
+  toggle-sort-order: ctrl+o
+  toggle-wrap-tree: ctrl+p
+  extract-file: ctrl+e
+  page-up: pgup,u
+  page-down: pgdn,d
+
+diff:
+  # You can change the default files shown in the filetree (right pane).
+  # All diff types are shown by default.
+  hide:
+    - added
+    - removed
+    - modified
+    - unmodified
+
+filetree:
+  # The default directory-collapse state
+  collapse-dir: false
+
+  # The percentage of screen width the filetree should take on the screen (must be >0 and <1)
+  pane-width: 0.5
+
+  # Show the file attributes next to the filetree
+  show-attributes: true
+
+layer:
+  # Enable showing all changes from this layer and every previous layer
+  show-aggregated-changes: false
+```
+
+## Config options
+
+### Top-level options
+
+<ParamField path="container-engine" type="string" default="docker">
+  The container engine to use when pulling images. Accepted values are `docker` and `podman`.
+</ParamField>
+
+<ParamField path="ignore-errors" type="boolean" default="false">
+  When `true`, dive continues analysis even if there are errors parsing the image archive.
+</ParamField>
+
+### log
+
+<ParamField path="log.enabled" type="boolean" default="true">
+  Enable or disable log output to a file.
+</ParamField>
+
+<ParamField path="log.path" type="string" default="./dive.log">
+  Path to the log file.
+</ParamField>
+
+<ParamField path="log.level" type="string" default="info">
+  Log level. Accepted values are `trace`, `debug`, `info`, `warn`, and `error`.
+</ParamField>
+
+### diff
+
+<ParamField path="diff.hide" type="string[]">
+  List of diff types to hide by default in the filetree pane. All diff types are shown by default. Accepted values are `added`, `removed`, `modified`, and `unmodified`.
+</ParamField>
+
+### filetree
+
+<ParamField path="filetree.collapse-dir" type="boolean" default="false">
+  Default directory-collapse state in the filetree. Set to `true` to start with all directories collapsed.
+</ParamField>
+
+<ParamField path="filetree.pane-width" type="number" default="0.5">
+  Percentage of the screen width that the filetree pane occupies. Must be greater than `0` and less than `1`.
+</ParamField>
+
+<ParamField path="filetree.show-attributes" type="boolean" default="true">
+  Show file attributes (permissions, owner, size) next to each entry in the filetree.
+</ParamField>
+
+### layer
+
+<ParamField path="layer.show-aggregated-changes" type="boolean" default="false">
+  When `true`, the layer view shows all changes from the selected layer and every previous layer combined, instead of only the current layer's changes.
+</ParamField>
+
+### keybinding
+
+You can override any keybinding by adding a `keybinding` section to your config file. Separate multiple keys for the same action with a comma. The first binding listed is used for UI hints.
+
+See [Keybindings](/configuration/keybindings) for the full list of binding names and their defaults.

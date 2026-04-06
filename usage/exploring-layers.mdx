@@ -1,0 +1,79 @@
+---
+title: "Exploring layers"
+description: "Navigate the dive TUI to inspect image layers and file tree changes."
+---
+
+When you run `dive <image>`, the terminal UI opens with three panes that give you a complete picture of your image's layer structure and file contents.
+
+## TUI layout
+
+The interface is divided into three areas:
+
+- **Left pane (layers)** — lists every layer in the image, showing the Dockerfile command that produced it and its size.
+- **Right pane (file tree)** — shows the cumulative file system at the selected layer, including all files from previous layers.
+- **Bottom-left pane (image stats)** — displays total image size, wasted bytes, and the efficiency score.
+
+Use <kbd>Tab</kbd> to move focus between the layer pane and the file tree pane.
+
+## Selecting a layer
+
+When you select a layer in the left pane, the file tree on the right updates to reflect the cumulative state of the file system up to and including that layer. You are always looking at a snapshot of the full file system at that point in the image build, not just the files changed in that single layer.
+
+Switch between two comparison modes with these bindings while the layer pane is focused:
+
+| Key | Action |
+|-----|--------|
+| <kbd>Ctrl+A</kbd> | Show aggregated modifications (all changes from every layer up to the selected one) |
+| <kbd>Ctrl+L</kbd> | Show only the modifications introduced by the currently selected layer |
+
+<Tip>
+Start with <kbd>Ctrl+A</kbd> (aggregate view) to see everything that has changed across all layers at once. Switch to <kbd>Ctrl+L</kbd> when you want to isolate exactly what a single layer contributed.
+</Tip>
+
+## File change indicators
+
+Each entry in the file tree is prefixed with a single character that indicates what happened to that file in the current view:
+
+| Indicator | Meaning |
+|-----------|---------|
+| `A` | Added — the file was created in this layer |
+| `M` | Modified — the file existed before and was changed |
+| `R` | Removed — the file was deleted (whiteout) |
+| `U` | Unmodified — the file exists but was not touched by this layer |
+
+## Navigating the file tree
+
+Use these bindings while the file tree pane is focused:
+
+| Key | Action |
+|-----|--------|
+| <kbd>Up</kbd> / <kbd>K</kbd> | Move up one line |
+| <kbd>Down</kbd> / <kbd>J</kbd> | Move down one line |
+| <kbd>PageUp</kbd> / <kbd>U</kbd> | Scroll up a page |
+| <kbd>PageDown</kbd> / <kbd>D</kbd> | Scroll down a page |
+| <kbd>Space</kbd> | Collapse or uncollapse a directory |
+| <kbd>Ctrl+Space</kbd> | Collapse or uncollapse all directories |
+| <kbd>Ctrl+F</kbd> | Open the file filter |
+| <kbd>Esc</kbd> | Close the file filter |
+
+## Filtering what you see
+
+You can show or hide specific change types to focus on what matters:
+
+| Key | Action |
+|-----|--------|
+| <kbd>Ctrl+A</kbd> | Show/hide added files |
+| <kbd>Ctrl+R</kbd> | Show/hide removed files |
+| <kbd>Ctrl+M</kbd> | Show/hide modified files |
+| <kbd>Ctrl+U</kbd> | Show/hide unmodified files |
+| <kbd>Ctrl+B</kbd> | Show/hide file attributes (permissions, owner, size) |
+
+Use <kbd>Ctrl+F</kbd> to filter files by name. Type part of a path and the tree narrows to matching entries. Press <kbd>Esc</kbd> to clear the filter.
+
+## Additional file tree actions
+
+| Key | Action |
+|-----|--------|
+| <kbd>Ctrl+O</kbd> | Toggle sort order of files in the tree |
+| <kbd>Ctrl+P</kbd> | Toggle word wrap on long file paths |
+| <kbd>Ctrl+E</kbd> | Extract the selected file's contents |

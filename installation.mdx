@@ -1,0 +1,176 @@
+---
+title: "Installation"
+description: "Install dive on Linux, macOS, Windows, or run it as a Docker container."
+---
+
+<Tabs>
+  <Tab title="Linux">
+    **Ubuntu/Debian**
+
+    Download and install the latest `.deb` package:
+
+    ```bash
+    DIVE_VERSION=$(curl -sL "https://api.github.com/repos/wagoodman/dive/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    curl -fOL "https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.deb"
+    sudo apt install ./dive_${DIVE_VERSION}_linux_amd64.deb
+    ```
+
+    **RHEL/CentOS**
+
+    Download and install the latest `.rpm` package:
+
+    ```bash
+    DIVE_VERSION=$(curl -sL "https://api.github.com/repos/wagoodman/dive/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    curl -fOL "https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.rpm"
+    rpm -i dive_${DIVE_VERSION}_linux_amd64.rpm
+    ```
+
+    **Arch Linux**
+
+    dive is available in the [extra repository](https://archlinux.org/packages/extra/x86_64/dive/):
+
+    ```bash
+    pacman -S dive
+    ```
+
+    **Snap**
+
+    <Warning>
+      Do not use the Snap method if you installed Docker via `apt-get`. Installing Docker via Snap alongside an existing `apt-get` Docker installation may break your Docker daemon. See [GitHub issue #546](https://github.com/wagoodman/dive/issues/546) for details.
+    </Warning>
+
+    If you use Docker via Snap, you can install dive and connect it to the Docker snap:
+
+    ```bash
+    sudo snap install docker
+    sudo snap install dive
+    sudo snap connect dive:docker-executables docker:docker-executables
+    sudo snap connect dive:docker-daemon docker:docker-daemon
+    ```
+  </Tab>
+
+  <Tab title="macOS">
+    **Homebrew**
+
+    ```bash
+    brew install dive
+    ```
+
+    **MacPorts**
+
+    ```bash
+    sudo port install dive
+    ```
+
+    You can also download the latest Darwin binary directly from the [releases page](https://github.com/wagoodman/dive/releases/latest).
+  </Tab>
+
+  <Tab title="Windows">
+    **Chocolatey**
+
+    ```powershell
+    choco install dive
+    ```
+
+    **Scoop**
+
+    ```powershell
+    scoop install main/dive
+    ```
+
+    **Winget**
+
+    ```powershell
+    winget install --id wagoodman.dive
+    ```
+
+    You can also download the latest Windows binary from the [releases page](https://github.com/wagoodman/dive/releases/latest).
+  </Tab>
+
+  <Tab title="Docker">
+    Pull the image from Docker Hub or GitHub Container Registry:
+
+    ```bash
+    docker pull docker.io/wagoodman/dive
+    # or
+    docker pull ghcr.io/wagoodman/dive
+    ```
+
+    Run dive with the Docker socket mounted so it can access your local images:
+
+    ```bash
+    docker run --rm -it \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        docker.io/wagoodman/dive:latest <image>
+    ```
+
+    On Windows (PowerShell), use backtick line continuations:
+
+    ```powershell
+    docker run --rm -it `
+        -v /var/run/docker.sock:/var/run/docker.sock `
+        docker.io/wagoodman/dive:latest <image>
+    ```
+
+    To make this convenient, add an alias to your shell profile:
+
+    ```bash
+    alias dive="docker run -ti --rm -v /var/run/docker.sock:/var/run/docker.sock docker.io/wagoodman/dive"
+    ```
+
+    <Note>
+      Depending on your Docker version, you may need to set the `DOCKER_API_VERSION` environment variable explicitly:
+
+      ```bash
+      DOCKER_API_VERSION=1.37 dive <image>
+      ```
+
+      When running via `docker run`, pass it as an environment variable:
+
+      ```bash
+      docker run --rm -it \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -e DOCKER_API_VERSION=1.37 \
+          docker.io/wagoodman/dive:latest <image>
+      ```
+    </Note>
+  </Tab>
+
+  <Tab title="Go tools">
+    If you have Go 1.10 or later installed, you can install dive directly with `go install`:
+
+    ```bash
+    go install github.com/wagoodman/dive@latest
+    ```
+
+    <Note>
+      Installing via `go install` does not embed version information, so `dive -v` will not show a proper version string.
+    </Note>
+  </Tab>
+</Tabs>
+
+<AccordionGroup>
+  <Accordion title="Other package managers">
+    **Nix/NixOS**
+
+    On NixOS:
+
+    ```bash
+    nix-env -iA nixos.dive
+    ```
+
+    On non-NixOS (Linux or macOS):
+
+    ```bash
+    nix-env -iA nixpkgs.dive
+    ```
+
+    **X-CMD**
+
+    [x-cmd](https://www.x-cmd.com/) is a POSIX shell toolbox with a lightweight package manager:
+
+    ```sh
+    x env use dive
+    ```
+  </Accordion>
+</AccordionGroup>

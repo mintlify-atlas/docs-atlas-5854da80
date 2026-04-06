@@ -1,0 +1,58 @@
+---
+title: "Introduction"
+description: "Explore Docker image layers, visualize file changes, and find wasted space with dive."
+---
+
+dive is a terminal UI tool for exploring the contents of a Docker image layer by layer. It shows you exactly which files were added, modified, or removed at each build step, and estimates how much space is wasted by duplicated or overwritten files across layers.
+
+If you've ever wondered why your Docker image is larger than expected — or wanted to understand what `RUN apt-get install` actually adds — dive gives you a clear, interactive answer.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Interactive layer explorer" icon="layer-group">
+    Select any layer in the left pane to see the combined file tree up to that point. Navigate with arrow keys, collapse directories, and filter files by name.
+  </Card>
+  <Card title="File change indicators" icon="file-pen">
+    Every file in the tree is marked as added, modified, removed, or unmodified. Spot exactly what changed — and what didn't — at each layer.
+  </Card>
+  <Card title="Efficiency score" icon="gauge-high">
+    The lower pane shows an experimental efficiency metric and the total amount of wasted space — from duplicated files, files moved across layers, or files that were never fully removed.
+  </Card>
+  <Card title="Build and analyze in one command" icon="hammer">
+    Replace `docker build` with `dive build` to build your image and immediately open it in the TUI. No extra steps needed.
+  </Card>
+  <Card title="CI mode" icon="circle-check">
+    Set `CI=true` to skip the TUI and get a pass/fail result based on configurable thresholds for efficiency and wasted space.
+  </Card>
+  <Card title="Multiple image sources" icon="box">
+    Fetch images from the Docker engine, Podman, or load a `.tar` archive directly from disk using the `--source` flag.
+  </Card>
+  <Card title="JSON export" icon="file-code">
+    Export the full layer analysis as structured JSON for scripting and automation — no TUI required.
+  </Card>
+  <Card title="Flexible installation" icon="download">
+    Available on Linux, macOS, and Windows via package managers, Docker, or `go install`.
+  </Card>
+</CardGroup>
+
+## How it works
+
+When you run `dive <image>`, dive fetches the image from your container engine and analyzes each layer in the image manifest. It builds a merged file tree for each layer, tracks which files changed between layers, and calculates a wasted-space estimate based on files that were overwritten or deleted after being written.
+
+The result is an interactive TUI with three panes:
+
+- **Left pane** — the list of image layers, with size information
+- **Right pane** — the file tree for the selected layer (or all layers combined)
+- **Bottom pane** — image metadata, efficiency score, and wasted space totals
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install dive on Linux, macOS, Windows, or run it as a Docker container.
+  </Card>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Analyze your first image and learn the TUI in a few minutes.
+  </Card>
+</CardGroup>

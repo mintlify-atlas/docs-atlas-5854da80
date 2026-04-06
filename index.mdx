@@ -1,97 +1,80 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "dive — Docker Image Explorer"
+description: "Explore every layer in your Docker image, visualize file changes, and discover ways to shrink your image size."
 ---
 
-## Setting up
+dive is a terminal UI tool for exploring Docker image layers, visualizing what changed in each layer, and identifying wasted space. With 50,000+ GitHub stars, it's the go-to tool for understanding and optimizing container images.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install dive on Linux, macOS, Windows, or run it via Docker — get up and running in seconds.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Analyze your first Docker image and learn the interactive TUI in minutes.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Using dive" icon="layer-group" href="/usage/exploring-layers">
+    Navigate layers, inspect file trees, and find optimization opportunities.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="CI Integration" icon="circle-check" href="/configuration/ci-integration">
+    Add image efficiency checks to your pipeline with pass/fail thresholds.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What dive does
 
-Everything you need to create world-class documentation.
+dive breaks open a Docker image and lets you explore it layer by layer. You see exactly which files were added, modified, or removed at each step — and get an efficiency score showing how much space is wasted by duplicated or overwritten files.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={2}>
+  <Card title="Layer explorer" icon="magnifying-glass">
+    Navigate every layer with an interactive file tree. Arrow keys, filtering, and collapsible directories.
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Efficiency scoring" icon="gauge-high">
+    See what percentage of your image is wasted space, and which files are the culprits.
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Multiple sources" icon="box">
+    Fetch images from Docker engine, Podman, or load directly from a `.tar` archive.
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="JSON export" icon="file-code">
+    Skip the TUI and export full layer analysis as structured JSON for scripting.
   </Card>
-</Columns>
+</CardGroup>
 
-## Need inspiration?
+## Get started in 30 seconds
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Steps>
+  <Step title="Install dive">
+    Install via your package manager of choice:
+
+    ```bash
+    # macOS
+    brew install dive
+
+    # Ubuntu/Debian
+    sudo apt install dive
+
+    # Docker (any platform)
+    docker pull docker.io/wagoodman/dive
+    ```
+  </Step>
+  <Step title="Analyze an image">
+    Pass any image tag, ID, or digest:
+
+    ```bash
+    dive nginx:latest
+    ```
+  </Step>
+  <Step title="Explore layers">
+    Use `Tab` to switch between the layer list and file tree. Arrow keys navigate. `Ctrl+F` filters files.
+  </Step>
+  <Step title="Check CI results">
+    Run in CI mode to get a pass/fail result without the interactive UI:
+
+    ```bash
+    CI=true dive nginx:latest
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  dive supports Docker, Podman, and Docker archive (`.tar`) image sources. See [Image Sources](/usage/image-sources) for details.
+</Note>

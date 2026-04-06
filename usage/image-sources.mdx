@@ -1,0 +1,101 @@
+---
+title: "Image sources"
+description: "Pull images from Docker, Podman, or a local tar archive."
+---
+
+dive supports three image sources. You can point it at a running container engine or load an image directly from a tar file on disk.
+
+## Available sources
+
+| Source | Value | Description |
+|--------|-------|-------------|
+| Docker engine | `docker` | Fetches the image from your local Docker daemon (default) |
+| Podman engine | `podman` | Fetches the image from your local Podman daemon (Linux only) |
+| Docker archive | `docker-archive` | Loads the image from a `.tar` file on disk |
+
+<Note>
+Podman support is Linux only. The `podman` source is not available on macOS or Windows.
+</Note>
+
+## Specifying the source
+
+You can specify the image source in two ways.
+
+### Using the `--source` flag
+
+Pass `--source` followed by the source name and the image reference as a separate argument:
+
+```bash
+dive --source docker nginx:latest
+dive --source podman my-image:tag
+dive --source docker-archive /path/to/image.tar
+```
+
+### Using a URL scheme prefix
+
+Prefix the image argument with `<source>://` to encode the source directly in the image reference:
+
+```bash
+dive docker://nginx:latest
+dive podman://my-image:tag
+dive docker-archive:///path/to/image.tar
+```
+
+## Examples by source
+
+<Tabs>
+  <Tab title="Docker">
+    Analyze an image from your local Docker daemon (this is the default — no `--source` flag is needed):
+
+    ```bash
+    dive nginx:latest
+    ```
+
+    Equivalent explicit form:
+
+    ```bash
+    dive --source docker nginx:latest
+    # or
+    dive docker://nginx:latest
+    ```
+
+    If you run dive as a Docker container itself, you must mount the Docker socket so it can reach the daemon:
+
+    ```bash
+    docker run --rm -it \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        docker.io/wagoodman/dive:latest nginx:latest
+    ```
+  </Tab>
+  <Tab title="Podman">
+    Analyze an image from your local Podman daemon on Linux:
+
+    ```bash
+    dive --source podman my-image:tag
+    # or
+    dive podman://my-image:tag
+    ```
+
+    <Warning>
+    Podman is only supported on Linux. Running with `--source podman` on macOS or Windows will fail.
+    </Warning>
+  </Tab>
+  <Tab title="Docker archive">
+    Analyze an image saved as a tar file on disk:
+
+    ```bash
+    dive --source docker-archive /path/to/image.tar
+    # or
+    dive docker-archive:///path/to/image.tar
+    ```
+
+    To export an image from Docker and then analyze it:
+
+    ```bash
+    docker save nginx > nginx.tar
+    dive docker-archive://nginx.tar
+    ```
+
+    This is useful when the image was built on another machine, pulled from a registry offline, or produced by a build system that outputs OCI archives.
+  </Tab>
+</Tabs>

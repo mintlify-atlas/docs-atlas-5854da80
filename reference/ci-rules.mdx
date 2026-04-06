@@ -1,0 +1,189 @@
+---
+title: "CI rules reference"
+description: "Complete reference for dive CI rules, configuration, and pass/fail behavior."
+---
+
+## Overview
+
+When you run dive in CI mode (by setting `CI=true` or passing `--ci`), it skips the interactive TUI and evaluates your image against a set of configurable rules. Each rule produces one of four statuses:
+
+| Status | Meaning |
+|--------|---------|
+| `RulePassed` | The image meets the rule's threshold. |
+| `RuleFailed` | The image violates the rule's threshold. |
+| `RuleDisabled` | The rule is explicitly disabled; it is skipped. |
+| `RuleUnknown` | The rule could not be evaluated. |
+
+<Warning>
+  If any rule has a `RuleFailed` status, dive exits with a non-zero return code. Make sure your CI pipeline checks the exit code.
+</Warning>
+
+Rules are read from a `.dive-ci` file at the root of your repository, and can be overridden with CLI flags.
+
+---
+
+## Configuration file
+
+Create a `.dive-ci` file in your repository root:
+
+```yaml
+rules:
+  # Fail if image efficiency drops below this ratio (0-1).
+  lowestEfficiency: 0.9
+
+  # Fail if wasted bytes exceed this amount.
+  # Accepts: B, KB, MB, GB. Set to "disabled" to skip.
+  highestWastedBytes: disabled
+
+  # Fail if wasted space exceeds this percentage of user-added bytes (0-1).
+  # The base image layer is NOT included in the calculation.
+  highestUserWastedPercent: 0.1
+```
+
+<Note>
+  The `.dive-ci` file uses camelCase keys (`lowestEfficiency`, `highestWastedBytes`, `highestUserWastedPercent`). These keys are different from the snake-case keys used in the main dive application config file.
+</Note>
+
+To use a config file at a different path, pass `--ci-config`:
+
+```bash
+CI=true dive my-image:latest --ci-config ./ci/dive-rules.yaml
+```
+
+---
+
+## Rules
+
+### `lowestEfficiency`
+
+<ParamField path="lowestEfficiency" type="float" default="0.9">
+  The lowest allowable image efficiency ratio. Dive fails the CI check if the measured efficiency is **below** this threshold.
+
+  - Range: `0` to `1` (e.g. `0.9` = 90% efficient)
+  - `.dive-ci` key: `lowestEfficiency`
+  - CLI flag: `--lowestEfficiency`
+  - Disable: set to `"disabled"`, `"off"`, or `"false"`
+
+  **Example**: To require at least 95% image efficiency:
+
+  ```yaml
+  rules:
+    lowestEfficiency: 0.95
+  ```
+
+  ```bash
+  CI=true dive my-image:latest --lowestEfficiency 0.95
+  ```
+
+  The rule fails with a message similar to:
+
+  ```
+  image efficiency is too low (efficiency=0.88 < threshold=0.95)
+  ```
+</ParamField>
+
+---
+
+### `highestWastedBytes`
+
+<ParamField path="highestWastedBytes" type="string" default="disabled">
+  The highest allowable number of bytes wasted in the image. Dive fails the CI check if the wasted byte count **exceeds** this threshold.
+
+  - Accepted formats: `B`, `KB`, `MB`, `GB` (e.g. `20MB`, `512KB`)
+  - `.dive-ci` key: `highestWastedBytes`
+  - CLI flag: `--highestWastedBytes`
+  - Disable: set to `"disabled"`, `"off"`, or `"false"` (this is the default)
+
+  **Example**: To fail if more than 20 MB is wasted:
+
+  ```yaml
+  rules:
+    highestWastedBytes: 20MB
+  ```
+
+  ```bash
+  CI=true dive my-image:latest --highestWastedBytes 20MB
+  ```
+
+  The rule fails with a message similar to:
+
+  ```
+  too many bytes wasted (wasted-bytes=25165824 > threshold=20971520)
+  ```
+</ParamField>
+
+---
+
+### `highestUserWastedPercent`
+
+<ParamField path="highestUserWastedPercent" type="float" default="0.1">
+  The highest allowable percentage of user-added bytes that are wasted. Dive fails the CI check if the wasted percentage **exceeds** this threshold.
+
+  - Range: `0` to `1` (e.g. `0.1` = 10%)
+  - The **base image layer is not included** in the user size calculation — only layers you add on top of the base image are counted.
+  - `.dive-ci` key: `highestUserWastedPercent`
+  - CLI flag: `--highestUserWastedPercent`
+  - Disable: set to `"disabled"`, `"off"`, or `"false"`
+
+  **Example**: To fail if more than 20% of user-added bytes are wasted:
+
+  ```yaml
+  rules:
+    highestUserWastedPercent: 0.20
+  ```
+
+  ```bash
+  CI=true dive my-image:latest --highestUserWastedPercent 0.20
+  ```
+
+  The rule fails with a message similar to:
+
+  ```
+  too many bytes wasted, relative to the user bytes added (%-user-wasted-bytes=0.25 > threshold=0.20)
+  ```
+</ParamField>
+
+---
+
+## Disabling a rule
+
+To disable a rule entirely, set its value to `"disabled"`, `"off"`, or `"false"` in your `.dive-ci` file:
+
+```yaml
+rules:
+  lowestEfficiency: 0.9
+  highestWastedBytes: disabled
+  highestUserWastedPercent: disabled
+```
+
+A disabled rule always results in `RuleDisabled` and never causes a CI failure.
+
+---
+
+## Full example
+
+A complete `.dive-ci` file covering all rules:
+
+```yaml
+rules:
+  # Fail if efficiency drops below 90%.
+  lowestEfficiency: 0.9
+
+  # Fail if more than 50 MB is wasted.
+  highestWastedBytes: 50MB
+
+  # Fail if more than 20% of user-added bytes are wasted.
+  highestUserWastedPercent: 0.20
+```
+
+Run in CI:
+
+```bash
+CI=true dive my-image:latest
+```
+
+Or use a non-default config path:
+
+```bash
+CI=true dive my-image:latest --ci-config ./ci/dive-rules.yaml
+```

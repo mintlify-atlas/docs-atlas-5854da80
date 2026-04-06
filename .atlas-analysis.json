@@ -1,0 +1,72 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "dive",
+  "projectDescription": "A terminal UI tool for exploring Docker image layers, visualizing file changes, and identifying wasted space to optimize container image size.",
+  "theme": "aspen",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Using dive",
+            "pages": [
+              "usage/exploring-layers",
+              "usage/analyzing-efficiency",
+              "usage/image-sources",
+              "usage/json-export"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/config-file",
+              "configuration/keybindings",
+              "configuration/ci-integration"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/cli",
+              "reference/ci-rules",
+              "reference/troubleshooting"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Interactive TUI for exploring Docker image layers",
+    "Visual file tree with change indicators (added, modified, removed, unmodified)",
+    "Image efficiency scoring and wasted space estimation",
+    "Build and analyze images in one command (dive build)",
+    "CI integration with pass/fail based on configurable rules",
+    "Multiple image sources: Docker engine, Podman engine, Docker archive",
+    "JSON export of layer analysis results",
+    "Fully customizable keybindings"
+  ],
+  "publicApiSurface": [
+    "dive <image>",
+    "dive build [docker build args]",
+    "dive --source <docker|podman|docker-archive> <image>",
+    "dive --ci <image> (CI mode)",
+    "dive --json <path> <image> (JSON export)",
+    "--lowestEfficiency <ratio>",
+    "--highestWastedBytes <bytes>",
+    "--highestUserWastedPercent <ratio>",
+    "CI config rules: lowestEfficiency, highestWastedBytes, highestUserWastedPercent"
+  ]
+}

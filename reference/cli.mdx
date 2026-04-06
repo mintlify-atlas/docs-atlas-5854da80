@@ -1,0 +1,177 @@
+---
+title: "CLI reference"
+description: "Complete reference for all dive commands and flags."
+---
+
+## `dive [IMAGE]`
+
+Explore the contents of a Docker image layer by layer, and identify sources of wasted space.
+
+```bash
+dive <image-tag>
+```
+
+The image argument accepts a tag, ID, digest, or a URL with a source scheme:
+
+```bash
+dive nginx:latest
+dive sha256:abc123...
+dive docker://nginx:latest
+dive podman://my-image:v1
+dive docker-archive:///path/to/image.tar
+```
+
+### Global flags
+
+<ParamField path="--source" type="string" default="docker">
+  The container engine to fetch the image from. Accepted values: `docker`, `podman`, `docker-archive`.
+
+  You can also specify the source inline using a URL scheme:
+
+  ```bash
+  dive docker://nginx:latest
+  dive podman://my-image:v1
+  dive docker-archive:///path/to/image.tar
+  ```
+</ParamField>
+
+<ParamField path="--ignore-errors" type="boolean" default="false">
+  Ignore image parsing errors and run the analysis anyway. Useful for malformed or non-standard images.
+
+  Short form: `-i`
+
+  ```bash
+  dive my-image:latest --ignore-errors
+  ```
+</ParamField>
+
+<ParamField path="--json" type="string">
+  Skip the interactive TUI and write the layer analysis statistics to the specified file path as JSON.
+
+  Short form: `-j`
+
+  ```bash
+  dive my-image:latest --json ./analysis.json
+  ```
+</ParamField>
+
+<ParamField path="--lowestEfficiency" type="string">
+  CI rule: the lowest allowable image efficiency, expressed as a ratio between `0` and `1`. The build fails if the measured efficiency falls below this threshold.
+
+  Only evaluated when CI mode is active.
+
+  ```bash
+  dive my-image:latest --ci --lowestEfficiency 0.95
+  ```
+</ParamField>
+
+<ParamField path="--highestWastedBytes" type="string">
+  CI rule: the highest allowable number of wasted bytes. Accepts human-readable sizes: `B`, `KB`, `MB`, `GB`. The build fails if wasted bytes exceed this value.
+
+  Only evaluated when CI mode is active.
+
+  ```bash
+  dive my-image:latest --ci --highestWastedBytes 20MB
+  ```
+</ParamField>
+
+<ParamField path="--highestUserWastedPercent" type="string">
+  CI rule: the highest allowable percentage of user-added bytes that are wasted, expressed as a ratio between `0` and `1`. The base image layer is not included in the calculation.
+
+  Only evaluated when CI mode is active.
+
+  ```bash
+  dive my-image:latest --ci --highestUserWastedPercent 0.20
+  ```
+</ParamField>
+
+<ParamField path="--ci" type="boolean" default="false">
+  Skip the interactive TUI and validate the image against CI rules. Equivalent to setting `CI=true` in the environment.
+
+  ```bash
+  dive my-image:latest --ci
+  ```
+</ParamField>
+
+<ParamField path="--ci-config" type="string" default=".dive-ci">
+  Path to the YAML CI rules config file. Overrides the default `.dive-ci` location.
+
+  ```bash
+  dive my-image:latest --ci --ci-config ./config/dive-ci.yaml
+  ```
+</ParamField>
+
+<ParamField path="-c" type="string">
+  Path to the dive configuration file. By default, dive searches several standard locations.
+
+  ```bash
+  dive my-image:latest -c ~/.config/dive/config.yaml
+  ```
+</ParamField>
+
+<ParamField path="-v" type="count">
+  Increase log verbosity. Pass multiple times to increase further (e.g. `-vv`).
+
+  ```bash
+  dive my-image:latest -v
+  ```
+</ParamField>
+
+<ParamField path="-q" type="boolean" default="false">
+  Quiet mode. Suppress non-essential output.
+
+  ```bash
+  dive my-image:latest -q
+  ```
+</ParamField>
+
+### CI mode
+
+Set the `CI=true` environment variable to enable CI mode without using the `--ci` flag. In CI mode, dive skips the interactive TUI, analyzes the image, and exits with a non-zero code if any rule fails.
+
+```bash
+CI=true dive my-image:latest
+```
+
+See [CI rules reference](/reference/ci-rules) for details on configuring pass/fail rules.
+
+---
+
+## `dive build`
+
+Build a Docker image from a Dockerfile and immediately analyze it.
+
+```bash
+dive build [any valid docker build arguments]
+```
+
+This is a thin wrapper around `docker build`. All flags and arguments are passed through to Docker directly.
+
+```bash
+dive build -t my-image:latest .
+dive build -t my-image:latest --build-arg VERSION=1.0 -f Dockerfile.prod .
+```
+
+<Note>
+  Flag parsing is disabled for this subcommand — every argument is forwarded to `docker build` as-is. dive-specific flags (like `--source`) are not available here.
+</Note>
+
+---
+
+## `dive version`
+
+Print version information for the installed dive binary.
+
+```bash
+dive version
+```
+
+---
+
+## `dive config`
+
+Print the current resolved configuration, including all defaults and any overrides from config files or environment variables.
+
+```bash
+dive config
+```
